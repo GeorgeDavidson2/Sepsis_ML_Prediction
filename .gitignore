@@ -1,0 +1,24 @@
+# Claude Code local config — never push
+.claude/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+*.egg-info/
+dist/
+build/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data — too large for git
+data/raw/
+data/processed/
+
+# Model checkpoints
+results/models/
+
+# OS
+.DS_Store
