@@ -27,7 +27,6 @@ WHAT IT DOES:
 import os
 import sys
 import shutil
-import subprocess
 from pathlib import Path
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
@@ -40,7 +39,7 @@ KAGGLE_DATASET = "salikhussaini49/prediction-of-sepsis"
 
 
 def check_kaggle_credentials():
-    """Verify kaggle.json exists before attempting download."""
+    """Verify kaggle.json exists and kaggle package is importable."""
     kaggle_json = Path.home() / ".kaggle" / "kaggle.json"
     if not kaggle_json.exists():
         print("ERROR: kaggle.json not found.")
@@ -49,7 +48,16 @@ def check_kaggle_credentials():
         sys.exit(1)
     # Ensure correct permissions (Kaggle CLI requires 600)
     kaggle_json.chmod(0o600)
+
+    try:
+        import kaggle
+    except ImportError:
+        print("ERROR: kaggle package not found. Install it with:")
+        print("  pip install kaggle")
+        sys.exit(1)
+
     print(f"Kaggle credentials found: {kaggle_json}")
+    print(f"Kaggle package version  : {kaggle.__version__}")
 
 
 def check_already_downloaded():
@@ -58,27 +66,26 @@ def check_already_downloaded():
     set_b_count = len(list(SET_B_DIR.glob("*.psv"))) if SET_B_DIR.exists() else 0
 
     if set_a_count > 1000 and set_b_count > 1000:
-        print(f"Data already present — Set A: {set_a_count} files, Set B: {set_b_count} files.")
+        print(f"Data already present — Set A: {set_a_count:,} files, Set B: {set_b_count:,} files.")
         print("Delete data/raw/training_setA/ and training_setB/ to re-download.")
         sys.exit(0)
 
 
 def download_from_kaggle():
-    """Run the Kaggle CLI download command."""
+    """Download and unzip dataset using the Kaggle Python API."""
+    from kaggle import api
+
     DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
     print(f"Downloading dataset: {KAGGLE_DATASET}")
     print("This may take a few minutes (~42 MB)...")
 
-    result = subprocess.run(
-        ["kaggle", "datasets", "download", "-d", KAGGLE_DATASET,
-         "--unzip", "-p", str(DOWNLOAD_DIR)],
-        capture_output=False
+    api.authenticate()
+    api.dataset_download_files(
+        KAGGLE_DATASET,
+        path=str(DOWNLOAD_DIR),
+        unzip=True,
+        quiet=False
     )
-
-    if result.returncode != 0:
-        print("ERROR: Kaggle download failed. Check your credentials and internet connection.")
-        sys.exit(1)
-
     print("Download complete.")
 
 
@@ -86,40 +93,34 @@ def organise_files():
     """
     Move downloaded .psv files into the correct project folders.
 
-    The Kaggle dataset contains two folders:
+    The Kaggle dataset contains two subfolders:
       training_setA/  → data/raw/training_setA/
       training_setB/  → data/raw/training_setB/
-
-    Folder names may vary slightly — we search for any folder
-    containing Set A/B .psv files.
     """
     SET_A_DIR.mkdir(parents=True, exist_ok=True)
     SET_B_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Find downloaded folders (search recursively for .psv files)
     psv_files = list(DOWNLOAD_DIR.rglob("*.psv"))
     if not psv_files:
         print("ERROR: No .psv files found in downloaded archive.")
         print(f"  Check contents of: {DOWNLOAD_DIR}")
         sys.exit(1)
 
-    print(f"Found {len(psv_files)} .psv files. Organising into Set A and Set B...")
+    print(f"Found {len(psv_files):,} .psv files. Organising into Set A and Set B...")
 
     moved_a = moved_b = 0
     for f in psv_files:
-        # Determine Set A vs Set B by parent folder name
         parent = f.parent.name.lower()
-        if "seta" in parent or "set_a" in parent or "training_seta" in parent or "a" in parent:
+        if "seta" in parent or "set_a" in parent or "training_seta" in parent or parent.endswith("a"):
             shutil.move(str(f), SET_A_DIR / f.name)
             moved_a += 1
-        elif "setb" in parent or "set_b" in parent or "training_setb" in parent or "b" in parent:
+        elif "setb" in parent or "set_b" in parent or "training_setb" in parent or parent.endswith("b"):
             shutil.move(str(f), SET_B_DIR / f.name)
             moved_b += 1
         else:
-            # Fallback: split roughly in half by filename (p0xxxxx → A, p1xxxxx → B)
-            # This handles datasets that don't separate by folder
-            first_char = f.stem[1] if len(f.stem) > 1 else '0'
-            if first_char <= '4':
+            # Fallback: split by filename — p0xxxxx → A, p1xxxxx → B
+            first_digit = f.stem[1] if len(f.stem) > 1 and f.stem[1].isdigit() else '0'
+            if int(first_digit) <= 4:
                 shutil.move(str(f), SET_A_DIR / f.name)
                 moved_a += 1
             else:
@@ -136,16 +137,16 @@ def cleanup():
         print("Cleaned up temporary download folder.")
 
 
-def print_summary(moved_a, moved_b):
+def print_summary():
     set_a_count = len(list(SET_A_DIR.glob("*.psv")))
     set_b_count = len(list(SET_B_DIR.glob("*.psv")))
 
     print("\n" + "─" * 50)
     print("DOWNLOAD COMPLETE")
     print("─" * 50)
-    print(f"  Set A: {set_a_count:,} files  →  data/raw/training_setA/")
-    print(f"  Set B: {set_b_count:,} files  →  data/raw/training_setB/")
-    print(f"  Total: {set_a_count + set_b_count:,} patient files")
+    print(f"  Set A : {set_a_count:>6,} files  →  data/raw/training_setA/")
+    print(f"  Set B : {set_b_count:>6,} files  →  data/raw/training_setB/")
+    print(f"  Total : {set_a_count + set_b_count:>6,} patient files")
     print("─" * 50)
 
     if set_a_count < 1000 or set_b_count < 1000:
@@ -164,6 +165,6 @@ if __name__ == "__main__":
     check_kaggle_credentials()
     check_already_downloaded()
     download_from_kaggle()
-    moved_a, moved_b = organise_files()
+    organise_files()
     cleanup()
-    print_summary(moved_a, moved_b)
+    print_summary()
