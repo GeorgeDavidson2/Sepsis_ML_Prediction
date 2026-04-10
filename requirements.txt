@@ -1,0 +1,18 @@
+# Python 3.13 compatible — install with: pip install -r requirements.txt
+numpy==2.3.5
+pandas==3.0.2
+scikit-learn==1.8.0
+xgboost==3.2.0
+shap==0.51.0
+matplotlib==3.10.8
+seaborn==0.13.2
+scipy==1.17.1
+tqdm==4.67.3
+joblib==1.5.3
+
+# ── PyTorch (LSTM training) ───────────────────────────────────────────────────
+# PyTorch is NOT listed here because it requires a GPU runtime for LSTM training.
+# Install it in your Colab/Kaggle notebook with the standard command:
+#   !pip install torch   (Colab/Kaggle already has torch pre-installed)
+# For local CPU-only testing (optional):
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
