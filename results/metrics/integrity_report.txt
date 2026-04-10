@@ -1,0 +1,36 @@
+============================================================
+PhysioNet/CinC 2019 — Dataset Integrity Report
+============================================================
+
+CHECK 1 — File Counts
+────────────────────────────────────────────────────────────
+  Set A : 20,336 files  (expected ~20,336)
+  Set B : 20,000 files  (expected ~20,000)
+  Total : 40,336 files  (expected ~40,336)
+  PASS
+
+CHECK 2 — Column Consistency
+────────────────────────────────────────────────────────────
+  All 40,336 files have exactly 41 columns.
+  PASS
+
+CHECK 3 — SepsisLabel Values
+────────────────────────────────────────────────────────────
+  Unique SepsisLabel values found : [0, 1]
+  PASS — only 0 and 1 present.
+
+CHECK 4 — ICULOS Monotonically Increasing
+────────────────────────────────────────────────────────────
+  All 500 sampled files have monotonic ICULOS.
+  PASS
+
+CHECK 5 — Quick Stats (full scan)
+────────────────────────────────────────────────────────────
+  Total patients   : 40,336
+  Sepsis patients  : 2,932  (7.3%)
+  Stay length (h)  : min=8, median=38, max=336
+  PASS — sepsis prevalence is within expected range.
+
+============================================================
+Integrity check complete.
+============================================================
