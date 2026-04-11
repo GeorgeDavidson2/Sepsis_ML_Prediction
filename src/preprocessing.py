@@ -8,9 +8,10 @@ Usage:
     df_shifted, excluded_ids = engineer_labels(df)
 """
 
+import numpy as np
 import pandas as pd
 
-from src.config import LABEL_SHIFT_HOURS
+from src.config import LABEL_SHIFT_HOURS, OUTLIER_BOUNDS
 
 
 def engineer_labels(df: pd.DataFrame) -> tuple[pd.DataFrame, list]:
@@ -80,3 +81,41 @@ def engineer_labels(df: pd.DataFrame) -> tuple[pd.DataFrame, list]:
     print(f'Row-level prevalence (EarlyLabel=1): {prevalence:.2f}%')
 
     return df_shifted, excluded_ids
+
+
+def clip_outliers(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Set physiologically implausible values to NaN.
+
+    Uses bounds defined in src/config.py OUTLIER_BOUNDS. Runs BEFORE imputation
+    so both Strategy A and Strategy B receive clean starting data.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Output of engineer_labels(). Must contain the feature columns.
+
+    Returns
+    -------
+    pd.DataFrame with implausible values replaced by NaN. All other values
+    (including already-NaN entries) are unchanged.
+    """
+    df = df.copy()
+    clip_counts = {}
+
+    for feature, (low, high) in OUTLIER_BOUNDS.items():
+        if feature not in df.columns:
+            continue
+        mask = df[feature].notna() & ((df[feature] < low) | (df[feature] > high))
+        clip_counts[feature] = int(mask.sum())
+        df.loc[mask, feature] = np.nan
+
+    print('Outlier clipping summary:')
+    total = 0
+    for feat, count in clip_counts.items():
+        pct = 100 * count / df[feat].notna().sum() if df[feat].notna().sum() > 0 else 0
+        print(f'  {feat:<12}: {count:>5} values clipped  ({pct:.3f}% of observed)')
+        total += count
+    print(f'  {"TOTAL":<12}: {total:>5} values clipped')
+
+    return df
