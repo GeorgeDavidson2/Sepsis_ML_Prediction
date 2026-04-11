@@ -20,5 +20,10 @@ data/processed/
 # Model checkpoints
 results/models/
 
+# Virtual environments
+venv_ml/
+venv/
+.venv/
+
 # OS
 .DS_Store
