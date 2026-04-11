@@ -10,10 +10,27 @@ Usage:
 
 import os
 
+import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
 from src.config import RANDOM_SEED, SPLIT_RATIOS, SPLITS_DIR
+
+
+def validate_no_nans(arr: np.ndarray, name: str, feature_cols: list) -> None:
+    """
+    Assert that a NumPy array contains no NaN values.
+    Raises ValueError with details if any are found.
+    """
+    nan_count = np.isnan(arr).sum()
+    if nan_count > 0:
+        # Find which columns still have NaN
+        nan_cols = [feature_cols[i] for i in range(arr.shape[1]) if np.isnan(arr[:, i]).any()]
+        raise ValueError(
+            f'NaN validation FAILED for {name}: {nan_count} NaN values remain '
+            f'in columns: {nan_cols}'
+        )
+    print(f'  NaN check {name}: PASS (0 NaN values)')
 
 
 def create_patient_splits(df: pd.DataFrame) -> tuple[list, list, list]:
