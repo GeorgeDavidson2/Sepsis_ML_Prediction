@@ -17,20 +17,56 @@ from sklearn.model_selection import train_test_split
 from src.config import RANDOM_SEED, SPLIT_RATIOS, SPLITS_DIR
 
 
-def validate_no_nans(arr: np.ndarray, name: str, feature_cols: list) -> None:
+def validate_no_nans(data, name: str = 'dataset', feature_cols: list = None) -> None:
     """
-    Assert that a NumPy array contains no NaN values.
-    Raises ValueError with details if any are found.
+    Assert that no NaN values exist in a NumPy array or DataFrame.
+    Raises a descriptive ValueError if any are found.
+
+    Parameters
+    ----------
+    data        : np.ndarray or pd.DataFrame
+    name        : label for the error message (e.g. 'train Strategy A')
+    feature_cols: column names for arrays — used to identify which columns fail
     """
-    nan_count = np.isnan(arr).sum()
-    if nan_count > 0:
-        # Find which columns still have NaN
-        nan_cols = [feature_cols[i] for i in range(arr.shape[1]) if np.isnan(arr[:, i]).any()]
-        raise ValueError(
-            f'NaN validation FAILED for {name}: {nan_count} NaN values remain '
-            f'in columns: {nan_cols}'
-        )
+    if isinstance(data, np.ndarray):
+        nan_count = int(np.isnan(data).sum())
+        if nan_count > 0:
+            if feature_cols is not None:
+                bad = [feature_cols[i] for i in range(data.shape[1]) if np.isnan(data[:, i]).any()]
+                raise ValueError(
+                    f'[{name}] NaN validation FAILED: {nan_count} NaN values remain '
+                    f'in columns: {bad}'
+                )
+            raise ValueError(
+                f'[{name}] NaN values found in array. Check imputation pipeline.'
+            )
+    else:
+        nan_cols = data.columns[data.isna().any()].tolist()
+        if nan_cols:
+            raise ValueError(
+                f'[{name}] NaN values remain in {len(nan_cols)} column(s): {nan_cols[:10]}'
+                f'\nCheck that imputer was fit on training data and that forward-fill '
+                f'fallback median is applied for first-timestep edge cases.'
+            )
     print(f'  NaN check {name}: PASS (0 NaN values)')
+
+
+def set_all_seeds(seed: int = RANDOM_SEED) -> None:
+    """
+    Set random seeds for reproducibility across all libraries.
+    Call once at the top of every notebook or training script.
+    """
+    import random
+    random.seed(seed)
+    np.random.seed(seed)
+    try:
+        import torch
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+    except ImportError:
+        pass  # torch not installed yet — seeds set for random + numpy
+    print(f'All random seeds set to {seed}')
 
 
 def create_patient_splits(df: pd.DataFrame) -> tuple[list, list, list]:
