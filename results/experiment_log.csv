@@ -1,0 +1,3 @@
+condition,model,strategy,hyperparams,val_auc_roc,val_auprc,val_f1,test_auc_roc,test_auprc,test_f1,test_precision,test_recall,threshold
+Baseline,LR,Strategy_A,{'C': 10.0},0.7805,0.1098,0.2252,0.7942,0.1346,0.2402,0.1804,0.3594,0.74
+Baseline,LR,Strategy_B,{'C': 10.0},0.7528,0.0693,0.1441,0.7627,0.072,0.1422,0.0992,0.2512,0.76
