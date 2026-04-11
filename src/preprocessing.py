@@ -8,10 +8,16 @@ Usage:
     df_shifted, excluded_ids = engineer_labels(df)
 """
 
+import os
+
+import joblib
 import numpy as np
 import pandas as pd
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
 
-from src.config import LABEL_SHIFT_HOURS, OUTLIER_BOUNDS
+from src.config import ALL_FEATURES, LABEL_SHIFT_HOURS, MODELS_DIR, OUTLIER_BOUNDS
+from src.utils import validate_no_nans
 
 
 def engineer_labels(df: pd.DataFrame) -> tuple[pd.DataFrame, list]:
@@ -119,3 +125,65 @@ def clip_outliers(df: pd.DataFrame) -> pd.DataFrame:
     print(f'  {"TOTAL":<12}: {total:>5} values clipped')
 
     return df
+
+
+def apply_strategy_A(
+    train_df: pd.DataFrame,
+    val_df: pd.DataFrame,
+    test_df: pd.DataFrame,
+) -> tuple:
+    """
+    Strategy A: median imputation + standard scaling.
+
+    Fits imputer and scaler on training data only, then transforms all three
+    sets. This prevents data leakage from val/test into the imputation step.
+
+    Parameters
+    ----------
+    train_df, val_df, test_df : pd.DataFrame
+        Row-level DataFrames filtered to the corresponding patient split.
+        Must contain ALL_FEATURES columns and 'EarlyLabel'.
+
+    Returns
+    -------
+    X_train, X_val, X_test : np.ndarray  — imputed and scaled feature arrays
+    y_train, y_val, y_test : np.ndarray  — EarlyLabel arrays
+    feature_cols           : list[str]   — ordered feature names
+    """
+    feature_cols = [c for c in ALL_FEATURES if c in train_df.columns]
+
+    X_train_raw = train_df[feature_cols].values
+    X_val_raw   = val_df[feature_cols].values
+    X_test_raw  = test_df[feature_cols].values
+
+    y_train = train_df['EarlyLabel'].values
+    y_val   = val_df['EarlyLabel'].values
+    y_test  = test_df['EarlyLabel'].values
+
+    # Step 1: Median imputation — fit on train only
+    imputer = SimpleImputer(strategy='median')
+    X_train_imp = imputer.fit_transform(X_train_raw)
+    X_val_imp   = imputer.transform(X_val_raw)
+    X_test_imp  = imputer.transform(X_test_raw)
+
+    # Step 2: Standard scaling — fit on train only
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train_imp)
+    X_val   = scaler.transform(X_val_imp)
+    X_test  = scaler.transform(X_test_imp)
+
+    # Step 3: Save fitted objects for reproducibility
+    os.makedirs(MODELS_DIR, exist_ok=True)
+    joblib.dump(imputer, f'{MODELS_DIR}strategy_A_imputer.pkl')
+    joblib.dump(scaler,  f'{MODELS_DIR}strategy_A_scaler.pkl')
+
+    # Step 4: Validate no NaN remains
+    print('Strategy A — NaN validation:')
+    for arr, name in [(X_train, 'train_A'), (X_val, 'val_A'), (X_test, 'test_A')]:
+        validate_no_nans(arr, name, feature_cols)
+
+    print(f'Strategy A complete | features: {X_train.shape[1]} | '
+          f'train rows: {X_train.shape[0]:,} | '
+          f'train mean ≈ {X_train.mean():.4f} (expect ~0)')
+
+    return X_train, X_val, X_test, y_train, y_val, y_test, feature_cols
