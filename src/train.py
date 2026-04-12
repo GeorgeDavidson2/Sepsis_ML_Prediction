@@ -162,12 +162,14 @@ def train_lstm(
 
             logits = model(X_batch, lengths)
 
-            # Mask padded timesteps — exclude from loss
-            mask = torch.zeros_like(y_batch, dtype=torch.bool)
+            # pad_packed_sequence returns seq_len = longest real sequence in
+            # this batch, which may be < MAX_SEQ_LEN. Align mask and labels.
+            seq_len = logits.shape[1]
+            mask = torch.zeros(y_batch.shape[0], seq_len, dtype=torch.bool, device=device)
             for i, l in enumerate(lengths):
-                mask[i, :l] = True
+                mask[i, :min(int(l), seq_len)] = True
 
-            loss = criterion(logits[mask], y_batch[mask])
+            loss = criterion(logits[mask], y_batch[:, :seq_len].to(device)[mask])
 
             optimizer.zero_grad()
             loss.backward()
@@ -184,12 +186,13 @@ def train_lstm(
                 logits = model(X_batch.to(device), lengths)
                 probs  = torch.sigmoid(logits)
 
-                mask = torch.zeros_like(y_batch, dtype=torch.bool)
+                seq_len = logits.shape[1]
+                mask = torch.zeros(y_batch.shape[0], seq_len, dtype=torch.bool)
                 for i, l in enumerate(lengths):
-                    mask[i, :l] = True
+                    mask[i, :min(int(l), seq_len)] = True
 
                 all_probs.extend(probs[mask].cpu().numpy())
-                all_labels.extend(y_batch[mask].numpy())
+                all_labels.extend(y_batch[:, :seq_len][mask].numpy())
 
         val_auprc = average_precision_score(all_labels, all_probs)
         scheduler.step(val_auprc)
