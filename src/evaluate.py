@@ -19,7 +19,64 @@ from sklearn.metrics import (
     recall_score,
 )
 
-from src.config import EXPERIMENT_LOG, METRICS_DIR
+from src.config import EXPERIMENT_LOG, METRICS_DIR, N_BOOTSTRAP, RANDOM_SEED
+
+
+def bootstrap_ci(
+    y_true: np.ndarray,
+    y_prob: np.ndarray,
+    metric: str = 'auprc',
+    n_iterations: int = N_BOOTSTRAP,
+    ci: float = 0.95,
+    seed: int = RANDOM_SEED,
+) -> tuple:
+    """
+    Compute bootstrap confidence interval for AUC-ROC or AUPRC.
+
+    Resamples test patients (with replacement) n_iterations times and
+    computes the metric on each resample. Returns the mean and the
+    lower/upper bounds of the CI.
+
+    Parameters
+    ----------
+    y_true      : ground truth binary labels
+    y_prob      : predicted probabilities
+    metric      : 'auprc' or 'auc_roc'
+    n_iterations: number of bootstrap iterations (default N_BOOTSTRAP=1000)
+    ci          : confidence level (default 0.95 → 95% CI)
+    seed        : random seed for reproducibility
+
+    Returns
+    -------
+    (mean, lower, upper) — all floats rounded to 4 decimal places
+    """
+    rng    = np.random.default_rng(seed)
+    n      = len(y_true)
+    scores = []
+
+    for _ in range(n_iterations):
+        idx = rng.integers(0, n, size=n)
+        y_t = y_true[idx]
+        y_p = y_prob[idx]
+
+        # Skip resamples with only one class — metric undefined
+        if len(np.unique(y_t)) < 2:
+            continue
+
+        if metric == 'auprc':
+            scores.append(average_precision_score(y_t, y_p))
+        elif metric == 'auc_roc':
+            scores.append(roc_auc_score(y_t, y_p))
+        else:
+            raise ValueError(f"metric must be 'auprc' or 'auc_roc', got '{metric}'")
+
+    scores = np.array(scores)
+    alpha  = (1 - ci) / 2
+    lower  = float(np.percentile(scores, 100 * alpha))
+    upper  = float(np.percentile(scores, 100 * (1 - alpha)))
+    mean   = float(scores.mean())
+
+    return round(mean, 4), round(lower, 4), round(upper, 4)
 
 
 def select_threshold(y_true: np.ndarray, y_prob: np.ndarray) -> float:
