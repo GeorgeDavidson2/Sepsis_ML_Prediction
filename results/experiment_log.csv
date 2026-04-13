@@ -1,1 +1,5 @@
 condition,model,strategy,hyperparams,val_auc_roc,val_auprc,val_f1,test_auc_roc,test_auprc,test_f1,test_precision,test_recall,threshold
+A,XGBoost,Strategy_A,"{'max_depth': 4, 'learning_rate': 0.1}",,0.1730,,0.8295,0.1596,0.2503,,,
+B,XGBoost,Strategy_B,"{'max_depth': 4, 'learning_rate': 0.05}",,0.1734,,0.8541,0.1730,0.2751,,,
+C,LSTM,Strategy_A,"{'hidden_size': 128, 'dropout': 0.3, 'lr': 0.001}",,0.0899,,0.7599,0.0622,0.1208,,,
+D,LSTM,Strategy_B,"{'hidden_size': 128, 'dropout': 0.2, 'lr': 0.0005}",,0.0706,,0.7597,0.0613,0.1224,,,
