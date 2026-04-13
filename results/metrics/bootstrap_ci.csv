@@ -1,0 +1,5 @@
+condition,model,strategy,auprc,auprc_ci_lo,auprc_ci_hi,auc_roc,auc_roc_ci_lo,auc_roc_ci_hi
+A,XGBoost,Strategy A,0.1672,0.1582,0.1761,0.8325,0.8267,0.8389
+B,XGBoost,Strategy B,0.173,0.1636,0.1825,0.8539,0.8487,0.8588
+C,LSTM,Strategy A,0.0625,0.0577,0.0678,0.7598,0.7515,0.7684
+D,LSTM,Strategy B,0.0618,0.0564,0.0676,0.7598,0.7509,0.7683
