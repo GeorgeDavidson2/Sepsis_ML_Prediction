@@ -59,7 +59,7 @@ class SepsisLSTM(nn.Module):
         """
         # Pack to skip padded positions inside the LSTM
         packed = nn.utils.rnn.pack_padded_sequence(
-            x, lengths.cpu(), batch_first=True, enforce_sorted=True
+            x, lengths.cpu(), batch_first=True, enforce_sorted=False
         )
         lstm_out, _ = self.lstm(packed)
         output, _   = nn.utils.rnn.pad_packed_sequence(lstm_out, batch_first=True)

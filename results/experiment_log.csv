@@ -1,6 +1,5 @@
 condition,model,strategy,hyperparams,val_auc_roc,val_auprc,val_f1,test_auc_roc,test_auprc,test_f1,test_precision,test_recall,threshold
-Baseline,LR,Strategy_A,{'C': 10.0},0.7805,0.1098,0.2252,0.7942,0.1346,0.2402,0.1804,0.3594,0.74
-Baseline,LR,Strategy_B,{'C': 10.0},0.7528,0.0693,0.1441,0.7627,0.072,0.1422,0.0992,0.2512,0.76
-A,XGBoost,Strategy_A,"{'max_depth': 4, 'learning_rate': 0.05}",0.818,0.1646,0.2608,0.8304,0.1647,0.2613,0.2016,0.3712,0.85
-B,XGBoost,Strategy_B,"{'max_depth': 4, 'learning_rate': 0.05}",0.8026,0.1017,0.1802,0.817,0.1087,0.1869,0.1454,0.2615,0.77
-C,LSTM,Strategy_A,"{'hidden_size': 64, 'dropout': 0.2, 'lr': 0.001}",,0.0876,,0.7777,0.0664,0.1177,,,
+A,XGBoost,Strategy_A,"{'max_depth': 4, 'learning_rate': 0.1}",,0.1730,,0.8295,0.1596,0.2503,,,
+B,XGBoost,Strategy_B,"{'max_depth': 4, 'learning_rate': 0.05}",,0.1734,,0.8541,0.1730,0.2751,,,
+C,LSTM,Strategy_A,"{'hidden_size': 128, 'dropout': 0.3, 'lr': 0.001}",,0.0899,,0.7599,0.0622,0.1208,,,
+D,LSTM,Strategy_B,"{'hidden_size': 128, 'dropout': 0.2, 'lr': 0.0005}",,0.0706,,0.7597,0.0613,0.1224,,,

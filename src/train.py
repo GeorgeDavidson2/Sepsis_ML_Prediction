@@ -39,8 +39,18 @@ class SepsisDataset(Dataset):
         self.feature_cols = feature_cols
         self.max_seq_len  = max_seq_len
 
+        # Group once — avoids O(n×m) full-DataFrame scan per patient
+        pid_set = set(patient_ids)
+        grouped = (
+            df[df['patient_id'].isin(pid_set)]
+            .sort_values(['patient_id', 'ICULOS'])
+            .groupby('patient_id', sort=False)
+        )
+
         for pid in patient_ids:
-            pat = df[df['patient_id'] == pid].sort_values('ICULOS')
+            if pid not in grouped.groups:
+                continue
+            pat = grouped.get_group(pid)
             seq_len = min(len(pat), max_seq_len)
 
             X = np.zeros((max_seq_len, len(feature_cols)), dtype=np.float32)
