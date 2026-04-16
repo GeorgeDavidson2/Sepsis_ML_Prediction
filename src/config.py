@@ -1,15 +1,10 @@
 # src/config.py
-# ─────────────────────────────────────────────────────────────────────────────
-# SINGLE SOURCE OF TRUTH for all project settings.
-# Every other file in src/ imports from here — nothing hardcoded elsewhere.
-# ─────────────────────────────────────────────────────────────────────────────
+# Central configuration — paths, seeds, feature lists, and experiment settings.
 
 import os
 
-# ── Reproducibility ───────────────────────────────────────────────────────────
 RANDOM_SEED = 42  # Applied everywhere: numpy, torch, sklearn, XGBoost
 
-# ── Paths ─────────────────────────────────────────────────────────────────────
 DATA_DIR       = "data/raw/"
 PROCESSED_DIR  = "data/processed/"
 SPLITS_DIR     = "data/splits/"
@@ -19,7 +14,6 @@ FIGURES_DIR    = "results/figures/"
 METRICS_DIR    = "results/metrics/"
 EXPERIMENT_LOG = "results/experiment_log.csv"
 
-# ── Feature Groups (must match column names in the .psv files exactly) ────────
 VITAL_SIGNS = [
     'HR',      # Heart rate
     'O2Sat',   # Pulse oximetry
@@ -45,9 +39,7 @@ DEMOGRAPHICS = [
 
 ALL_FEATURES = VITAL_SIGNS + LAB_VALUES + DEMOGRAPHICS  # Exactly 40 features
 
-# ── Outlier Clipping Bounds ───────────────────────────────────────────────────
-# Values outside these ranges are physiologically impossible (data entry errors).
-# They will be set to NaN before imputation — not dropped.
+# Physiologically implausible values are set to NaN before imputation.
 OUTLIER_BOUNDS = {
     'HR':      (5, 300),
     'O2Sat':   (50, 100),
@@ -60,10 +52,8 @@ OUTLIER_BOUNDS = {
     'Lactate': (0.1, 30),
 }
 
-# ── Experiment Settings ───────────────────────────────────────────────────────
 LABEL_SHIFT_HOURS = 6               # Predict sepsis this many hours before onset
 MAX_SEQ_LEN       = 72              # Cap LSTM input sequences at 72 hours (3 days)
 SPLIT_RATIOS      = (0.70, 0.15, 0.15)  # Train / val / test proportions
 
-# ── Evaluation Settings ───────────────────────────────────────────────────────
 N_BOOTSTRAP = 1000                  # Iterations for bootstrap confidence intervals

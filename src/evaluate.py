@@ -1,10 +1,6 @@
 """
 src/evaluate.py
-──────────────────────────────────────────────────────────────────────────────
 Evaluation utilities shared across all model conditions.
-
-Usage:
-    from src.evaluate import compute_all_metrics, select_threshold, log_results
 """
 
 import os
@@ -31,24 +27,10 @@ def bootstrap_ci(
     seed: int = RANDOM_SEED,
 ) -> tuple:
     """
-    Compute bootstrap confidence interval for AUC-ROC or AUPRC.
+    Bootstrap confidence interval for AUC-ROC or AUPRC.
 
-    Resamples test patients (with replacement) n_iterations times and
-    computes the metric on each resample. Returns the mean and the
-    lower/upper bounds of the CI.
-
-    Parameters
-    ----------
-    y_true      : ground truth binary labels
-    y_prob      : predicted probabilities
-    metric      : 'auprc' or 'auc_roc'
-    n_iterations: number of bootstrap iterations (default N_BOOTSTRAP=1000)
-    ci          : confidence level (default 0.95 → 95% CI)
-    seed        : random seed for reproducibility
-
-    Returns
-    -------
-    (mean, lower, upper) — all floats rounded to 4 decimal places
+    Resamples rows with replacement and skips any resample that ends up
+    with only one class (metric undefined). Returns (mean, lower, upper).
     """
     rng    = np.random.default_rng(seed)
     n      = len(y_true)
@@ -80,18 +62,7 @@ def bootstrap_ci(
 
 
 def select_threshold(y_true: np.ndarray, y_prob: np.ndarray) -> float:
-    """
-    Select the decision threshold that maximises F1 on the validation set.
-
-    Parameters
-    ----------
-    y_true : np.ndarray — ground truth binary labels
-    y_prob : np.ndarray — predicted probabilities
-
-    Returns
-    -------
-    float — optimal threshold in [0, 1]
-    """
+    """Return the threshold in [0.01, 0.99] that maximises F1."""
     thresholds = np.linspace(0.01, 0.99, 99)
     best_f1, best_thresh = 0.0, 0.5
     for t in thresholds:
@@ -107,19 +78,7 @@ def compute_all_metrics(
     y_prob: np.ndarray,
     threshold: float = 0.5,
 ) -> dict:
-    """
-    Compute the full set of evaluation metrics for one condition.
-
-    Parameters
-    ----------
-    y_true    : ground truth binary labels
-    y_prob    : predicted probabilities (before thresholding)
-    threshold : decision threshold for precision/recall/F1
-
-    Returns
-    -------
-    dict with keys: auc_roc, auprc, f1, precision, recall, threshold
-    """
+    """Return auc_roc, auprc, f1, precision, recall, and threshold in a dict."""
     y_pred = (y_prob >= threshold).astype(int)
     return {
         'auc_roc'  : round(float(roc_auc_score(y_true, y_prob)), 4),
@@ -139,18 +98,7 @@ def log_results(
     test_metrics: dict,
     hyperparams: dict = None,
 ) -> None:
-    """
-    Append one row to results/experiment_log.csv.
-
-    Parameters
-    ----------
-    condition   : e.g. 'A', 'B', 'C', 'D'
-    model       : e.g. 'LR', 'XGBoost', 'LSTM'
-    strategy    : e.g. 'Strategy_A', 'Strategy_B'
-    val_metrics : dict from compute_all_metrics() on validation set
-    test_metrics: dict from compute_all_metrics() on test set
-    hyperparams : optional dict of key hyperparameters used
-    """
+    """Append one row to results/experiment_log.csv. Creates the file if absent."""
     row = {
         'condition'        : condition,
         'model'            : model,

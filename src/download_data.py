@@ -1,27 +1,10 @@
 """
 src/download_data.py
-────────────────────────────────────────────────────────────────────────────────
-Downloads the PhysioNet/CinC 2019 sepsis prediction dataset from Kaggle and
-places the raw .psv files in the correct project folders.
+Downloads the PhysioNet/CinC 2019 dataset from Kaggle and organises
+the raw .psv files into data/raw/training_setA/ and training_setB/.
 
-BEFORE RUNNING:
-  1. Create a free Kaggle account at https://www.kaggle.com
-  2. Go to https://www.kaggle.com/settings → API → Create New Token
-     This downloads a file called kaggle.json
-  3. Place kaggle.json at:
-       Mac/Linux : ~/.kaggle/kaggle.json
-       Windows   : C:\\Users\\<username>\\.kaggle\\kaggle.json
-  4. Run this script from the project root:
-       python src/download_data.py
-
-WHAT IT DOES:
-  - Downloads the Kaggle mirror of PhysioNet/CinC 2019
-    (dataset: salikhussaini49/prediction-of-sepsis)
-  - Unzips the archive
-  - Moves Set A files → data/raw/training_setA/
-  - Moves Set B files → data/raw/training_setB/
-  - Cleans up temporary zip/folder
-  - Prints a summary of file counts
+Requires a Kaggle API token (~/.kaggle/kaggle.json).
+Run from the project root: python src/download_data.py
 """
 
 import os
@@ -29,7 +12,6 @@ import sys
 import shutil
 from pathlib import Path
 
-# ── Paths ─────────────────────────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SET_A_DIR    = PROJECT_ROOT / "data" / "raw" / "training_setA"
 SET_B_DIR    = PROJECT_ROOT / "data" / "raw" / "training_setB"
