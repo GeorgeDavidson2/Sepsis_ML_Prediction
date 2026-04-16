@@ -7,13 +7,21 @@ Usage:
     from src.train import SepsisDataset, make_loaders, train_lstm
 """
 
+import sys
+from pathlib import Path
+
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from sklearn.metrics import average_precision_score
 
-from src.config import MAX_SEQ_LEN, RANDOM_SEED
+try:
+    from src.config import MAX_SEQ_LEN, RANDOM_SEED
+except ModuleNotFoundError:
+    ROOT_DIR = Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(ROOT_DIR))
+    from src.config import MAX_SEQ_LEN, RANDOM_SEED
 
 
 # ── Dataset ───────────────────────────────────────────────────────────────────
