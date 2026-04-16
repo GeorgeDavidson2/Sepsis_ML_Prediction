@@ -9,10 +9,3 @@ seaborn==0.13.2
 scipy==1.17.1
 tqdm==4.67.3
 joblib==1.5.3
-
-# ── PyTorch (LSTM training) ───────────────────────────────────────────────────
-# PyTorch is NOT listed here because it requires a GPU runtime for LSTM training.
-# Install it in your Colab/Kaggle notebook with the standard command:
-#   !pip install torch   (Colab/Kaggle already has torch pre-installed)
-# For local CPU-only testing (optional):
-#   pip install torch --index-url https://download.pytorch.org/whl/cpu

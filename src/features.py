@@ -1,13 +1,6 @@
 """
 src/features.py
-──────────────────────────────────────────────────────────────────────────────
 Temporal lag feature engineering for XGBoost.
-
-Usage:
-    from src.features import add_lag_features
-    train_df = add_lag_features(train_df)
-
-Must be called AFTER the patient-level split and BEFORE imputation.
 """
 
 import pandas as pd
@@ -20,33 +13,13 @@ _LAG_FEATURES_PER_VITAL = 6  # lag1, lag2, lag4, roll4_mean, roll4_std, delta1
 
 def add_lag_features(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Add temporal lag features for each of the 8 vital signs.
+    Add lag1/lag2/lag4, rolling mean/std, and delta features for each vital sign.
 
-    For each vital sign adds:
-      {feat}_lag1       — value 1 hour ago
-      {feat}_lag2       — value 2 hours ago
-      {feat}_lag4       — value 4 hours ago
-      {feat}_roll4_mean — rolling mean over last 4 hours (trend)
-      {feat}_roll4_std  — rolling std over last 4 hours (volatility)
-      {feat}_delta1     — current minus 1-hour-ago (rate of change)
+    All operations are grouped by patient so there is no cross-patient leakage.
+    NaN values at the start of each sequence are handled by the downstream imputer.
+    roll4_mean and roll4_std shift(1) before rolling to avoid look-ahead.
 
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Must contain 'patient_id', 'ICULOS', and VITAL_SIGNS columns.
-        Should be a single split (train, val, or test) — NOT the full dataset.
-
-    Returns
-    -------
-    pd.DataFrame with 48 additional lag feature columns (8 vitals × 6 features).
-
-    Notes
-    -----
-    - All lags are computed within each patient via groupby — no cross-patient bleed.
-    - First 1–4 rows of each patient will have NaN for lag features (no prior history).
-      These NaN values are handled downstream by Strategy A or B imputation.
-    - roll4_mean and roll4_std use shift(1) before rolling so they exclude the current
-      timestep (predicting from past values only, no look-ahead).
+    Returns a DataFrame with 48 additional columns (8 vitals × 6 features).
     """
     df = df.copy().sort_values(['patient_id', 'ICULOS']).reset_index(drop=True)
 

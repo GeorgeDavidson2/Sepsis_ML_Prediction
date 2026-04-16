@@ -1,12 +1,7 @@
 """
 src/data_loader.py
-──────────────────────────────────────────────────────────────────────────────
 Loads the raw PhysioNet/CinC 2019 dataset from individual .psv files into a
 single unified DataFrame.
-
-Usage:
-    from src.data_loader import load_all_patients
-    df = load_all_patients()
 """
 
 import glob
@@ -24,27 +19,6 @@ OUTPUT_COLUMNS = ['patient_id', 'hospital_id', 'timestep'] + ALL_FEATURES + ['Se
 def load_all_patients(data_dir: str = DATA_DIR) -> pd.DataFrame:
     """
     Read all .psv patient files from Set A and Set B.
-
-    Parameters
-    ----------
-    data_dir : str
-        Path to the directory that contains training_setA/ and training_setB/.
-        Defaults to DATA_DIR from config.py.
-
-    Returns
-    -------
-    pd.DataFrame with columns:
-        patient_id  — unique string identifier (from filename, e.g. 'p000001')
-        hospital_id — 'A' or 'B' (which hospital system)
-        timestep    — integer hour index starting at 0 per patient
-        [40 features as defined in config.ALL_FEATURES]
-        SepsisLabel — original 0/1 label, NOT yet shifted by 6 hours
-
-    Notes
-    -----
-    - Label shifting (6h early prediction) happens in a separate step (label_engineering.py).
-    - Files that fail to parse print a WARNING and are skipped — they do not crash the loader.
-    - Rows are ordered by patient_id then timestep.
     """
     records = []
 
@@ -81,7 +55,7 @@ def load_all_patients(data_dir: str = DATA_DIR) -> pd.DataFrame:
 
     full_df = pd.concat(records, ignore_index=True)
 
-    # Reorder columns: metadata first, then features, then label
+    # OUTPUT_COLUMNS defines the canonical order; drop any extras silently
     present = [c for c in OUTPUT_COLUMNS if c in full_df.columns]
     full_df = full_df[present]
 

@@ -1,11 +1,6 @@
 """
 src/utils.py
-──────────────────────────────────────────────────────────────────────────────
 Shared utilities for the Sepsis ML pipeline.
-
-Usage:
-    from src.utils import create_patient_splits
-    train_ids, val_ids, test_ids = create_patient_splits(df)
 """
 
 import os
@@ -18,16 +13,7 @@ from src.config import RANDOM_SEED, SPLIT_RATIOS, SPLITS_DIR
 
 
 def validate_no_nans(data, name: str = 'dataset', feature_cols: list = None) -> None:
-    """
-    Assert that no NaN values exist in a NumPy array or DataFrame.
-    Raises a descriptive ValueError if any are found.
-
-    Parameters
-    ----------
-    data        : np.ndarray or pd.DataFrame
-    name        : label for the error message (e.g. 'train Strategy A')
-    feature_cols: column names for arrays — used to identify which columns fail
-    """
+    """Raise a descriptive ValueError if any NaN values remain in data."""
     if isinstance(data, np.ndarray):
         nan_count = int(np.isnan(data).sum())
         if nan_count > 0:
@@ -52,10 +38,7 @@ def validate_no_nans(data, name: str = 'dataset', feature_cols: list = None) -> 
 
 
 def set_all_seeds(seed: int = RANDOM_SEED) -> None:
-    """
-    Set random seeds for reproducibility across all libraries.
-    Call once at the top of every notebook or training script.
-    """
+    """Set random seeds across random, numpy, and torch (if available)."""
     import random
     random.seed(seed)
     np.random.seed(seed)
@@ -71,26 +54,11 @@ def set_all_seeds(seed: int = RANDOM_SEED) -> None:
 
 def create_patient_splits(df: pd.DataFrame) -> tuple[list, list, list]:
     """
-    Create and save a stratified patient-level 70/15/15 train/val/test split.
+    Stratified patient-level 70/15/15 split, saved to data/splits/.
 
-    Stratification ensures the sepsis prevalence is preserved proportionally
-    across all three sets. Split is performed at the patient level — no patient's
-    rows appear in more than one set (prevents data leakage).
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Output of engineer_labels(). Must contain 'patient_id' and 'EarlyLabel'.
-
-    Returns
-    -------
-    train_ids, val_ids, test_ids : lists of patient ID strings
-
-    Saves
-    -----
-    data/splits/train_ids.csv
-    data/splits/val_ids.csv
-    data/splits/test_ids.csv
+    Stratification is on whether a patient ever develops sepsis, so class
+    prevalence is consistent across all three sets. Split is at patient level —
+    no patient's rows appear in more than one set.
     """
     # One row per patient: 1 if they ever develop sepsis, 0 otherwise
     patient_labels = (
@@ -105,7 +73,7 @@ def create_patient_splits(df: pd.DataFrame) -> tuple[list, list, list]:
 
     train_size, val_size, test_size = SPLIT_RATIOS  # (0.70, 0.15, 0.15)
 
-    # First split: 70% train, 30% temp (val + test combined)
+    # Two-step split keeps val and test equal without a three-way stratify call
     train_ids, temp_ids, _, temp_y = train_test_split(
         patient_ids, y_patients,
         test_size=(val_size + test_size),
@@ -113,7 +81,6 @@ def create_patient_splits(df: pd.DataFrame) -> tuple[list, list, list]:
         random_state=RANDOM_SEED,
     )
 
-    # Second split: split temp evenly into val and test
     val_ids, test_ids = train_test_split(
         temp_ids,
         test_size=0.5,
@@ -121,13 +88,11 @@ def create_patient_splits(df: pd.DataFrame) -> tuple[list, list, list]:
         random_state=RANDOM_SEED,
     )
 
-    # Save ID lists to CSV
     os.makedirs(SPLITS_DIR, exist_ok=True)
     pd.Series(train_ids).to_csv(f'{SPLITS_DIR}train_ids.csv', index=False, header=['patient_id'])
     pd.Series(val_ids).to_csv(  f'{SPLITS_DIR}val_ids.csv',   index=False, header=['patient_id'])
     pd.Series(test_ids).to_csv( f'{SPLITS_DIR}test_ids.csv',  index=False, header=['patient_id'])
 
-    # Print class balance across all three sets
     print(f'Split complete  (seed={RANDOM_SEED}, ratios={train_size}/{val_size}/{test_size})')
     print(f'{"Set":<8} {"Patients":>10} {"Sepsis":>10} {"Prevalence":>12}')
     print('-' * 44)

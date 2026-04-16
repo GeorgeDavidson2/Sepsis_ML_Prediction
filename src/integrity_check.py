@@ -1,18 +1,9 @@
 """
 src/integrity_check.py
-────────────────────────────────────────────────────────────────────────────────
-Runs 5 integrity checks on the raw PhysioNet/CinC 2019 dataset and saves a
-report to results/metrics/integrity_report.txt.
+Runs integrity checks on the raw PhysioNet/CinC 2019 dataset and saves a
+summary report to results/metrics/integrity_report.txt.
 
-Run from the project root:
-    python src/integrity_check.py
-
-Expected results:
-    - Total files  : ~40,336
-    - Columns/file : 41 (40 features + SepsisLabel)
-    - SepsisLabel  : only 0 and 1
-    - ICULOS       : monotonically increasing in every file
-    - Sepsis rate  : ~5.6%
+Run from the project root: python src/integrity_check.py
 """
 
 import random
@@ -23,7 +14,6 @@ from pathlib import Path
 import pandas as pd
 from tqdm import tqdm
 
-# ── Paths ─────────────────────────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SET_A_DIR    = PROJECT_ROOT / "data" / "raw" / "training_setA"
 SET_B_DIR    = PROJECT_ROOT / "data" / "raw" / "training_setB"
@@ -37,7 +27,6 @@ RANDOM_SEED = 42
 random.seed(RANDOM_SEED)
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
 
 class Tee:
     """Write output to both stdout and a StringIO buffer."""
@@ -59,7 +48,6 @@ def divider(tee, char="─", width=60):
     tee.write(char * width + "\n")
 
 
-# ── Checks ────────────────────────────────────────────────────────────────────
 
 def check_file_counts(tee, files_a, files_b):
     tee.write("\nCHECK 1 — File Counts\n")
@@ -165,7 +153,6 @@ def check_quick_stats(tee, all_files):
         tee.write("  PASS — sepsis prevalence is within expected range.\n")
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
     tee = Tee()
@@ -174,7 +161,6 @@ def main():
     tee.write("PhysioNet/CinC 2019 — Dataset Integrity Report\n")
     tee.write("=" * 60 + "\n")
 
-    # Collect files
     files_a = sorted(str(p) for p in SET_A_DIR.glob("*.psv")) if SET_A_DIR.exists() else []
     files_b = sorted(str(p) for p in SET_B_DIR.glob("*.psv")) if SET_B_DIR.exists() else []
     all_files = files_a + files_b
@@ -184,7 +170,6 @@ def main():
         tee.write("  Run: python src/download_data.py\n")
         sys.exit(1)
 
-    # Run checks
     check_file_counts(tee, files_a, files_b)
     check_columns(tee, all_files)
     check_sepsis_label(tee, all_files)

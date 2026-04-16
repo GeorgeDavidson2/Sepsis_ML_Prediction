@@ -7,7 +7,6 @@
 \usepackage{textcomp}
 \usepackage{xcolor}
 \usepackage{booktabs}
-\usepackage{multirow}
 \usepackage{hyperref}
 
 \graphicspath{{figures/}}
@@ -18,7 +17,7 @@
 A Controlled Comparison for Early Sepsis Prediction}
 
 \author{
-  \IEEEauthorblockN{George Arthur}
+  \IEEEauthorblockN{George Arthur \& Promise Owa}
   \IEEEauthorblockA{CS6140 Machine Learning\\
   Northeastern University\\
   Boston, MA, USA}
@@ -58,7 +57,7 @@ clinical features overlap with other conditions. Automated early-warning systems
 that operate on routinely collected ICU data offer a promising path to earlier
 intervention.
 
-Two broad approaches dominate the literature. The first relies on temporal sequence
+Two broad approaches are common in the literature \cite{moor2021early}. The first relies on temporal sequence
 models such as LSTMs \cite{hochreiter1997long} to capture complex dependencies
 across time. The second focuses on feature engineering, particularly on how
 missing values are handled, to extract more signal from sparse, irregularly sampled
@@ -162,7 +161,7 @@ preprocessing.
 A & XGBoost & A & 0.1672 [0.158, 0.176] & 0.8325 \\
 B & XGBoost & B & \textbf{0.1730} [0.164, 0.183] & \textbf{0.8539} \\
 C & LSTM    & A & 0.0625 [0.058, 0.068] & 0.7599 \\
-D & LSTM    & B & 0.0618 [0.056, 0.067] & 0.7597 \\
+D & LSTM    & B & 0.0618 [0.056, 0.068] & 0.7597 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -205,11 +204,12 @@ threshold-based alerting systems.
 Fig.~\ref{fig:shap} shows the top 20 features by mean absolute SHAP value for
 Conditions A and B. ICU length of stay (\texttt{ICULOS}) is the dominant predictor
 in both conditions, followed by hospital admission time and respiratory rate rolling
-mean, capturing the clinical reality that deteriorating respiratory patterns
-precede sepsis onset. In Condition B, missingness indicators for FiO$_2$ and EtCO$_2$
-appear in the top 20, confirming that the absence of certain measurements carries
-genuine clinical signal: physicians may not order these tests when patients are
-stable, making their absence informative.
+mean, consistent with the clinical observation that respiratory deterioration
+tends to precede sepsis onset \cite{seymour2016assessment}. In Condition B, missingness indicators for FiO$_2$ and EtCO$_2$
+appear in the top 20, consistent with the hypothesis that absent measurements
+carry predictive information. One plausible explanation is that certain tests
+are ordered selectively for deteriorating patients, making their absence a
+signal of relative stability \cite{che2018recurrent}.
 
 \begin{figure}[h]
   \centering
@@ -259,7 +259,7 @@ Strategy B improves XGBoost (AUPRC: 0.1672 $\to$ 0.1730); the confidence interva
 partially overlap (A: [0.1582, 0.1761], B: [0.1636, 0.1825]), so this difference
 should be interpreted cautiously. By contrast, the gap between XGBoost and LSTM
 conditions is clearly non-overlapping and unambiguous. Strategy B has no meaningful
-effect on LSTM performance (0.0625 $\to$ 0.0618). This asymmetry reveals that the
+effect on LSTM performance (0.0625 $\to$ 0.0618). This asymmetry suggests that the
 benefit of missingness-aware preprocessing is model-dependent: XGBoost can exploit
 missingness indicators as discrete features, while the LSTM's sequence-level
 optimisation cannot effectively leverage the same information across largely-missing

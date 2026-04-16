@@ -1,10 +1,6 @@
 """
 src/train.py
-──────────────────────────────────────────────────────────────────────────────
 Dataset, DataLoader factory, and training loop for SepsisLSTM.
-
-Usage:
-    from src.train import SepsisDataset, make_loaders, train_lstm
 """
 
 import numpy as np
@@ -16,16 +12,12 @@ from sklearn.metrics import average_precision_score
 from src.config import MAX_SEQ_LEN, RANDOM_SEED
 
 
-# ── Dataset ───────────────────────────────────────────────────────────────────
-
 class SepsisDataset(Dataset):
     """
-    PyTorch Dataset that groups rows by patient and pads sequences to MAX_SEQ_LEN.
+    Builds padded (X, y, length) tuples from a patient-level DataFrame.
 
-    Each item is:
-        X       : (MAX_SEQ_LEN, n_features) float32 tensor — padded with zeros
-        y       : (MAX_SEQ_LEN,) float32 tensor — padded with zeros
-        length  : int — true sequence length (number of real timesteps)
+    Sequences longer than MAX_SEQ_LEN are truncated. Padding is zero-filled
+    so the LSTM can ignore it via packed sequences.
     """
 
     def __init__(
@@ -87,13 +79,7 @@ def make_loaders(
     feature_cols: list,
     batch_size: int = 64,
 ) -> tuple:
-    """
-    Build train, val, and test DataLoaders for SepsisLSTM.
-
-    Returns
-    -------
-    train_loader, val_loader, test_loader
-    """
+    """Return train, val, and test DataLoaders. Train loader is shuffled; val/test are not."""
     train_ds = SepsisDataset(train_df, patient_train, feature_cols)
     val_ds   = SepsisDataset(val_df,   patient_val,   feature_cols)
     test_ds  = SepsisDataset(test_df,  patient_test,  feature_cols)
@@ -111,8 +97,6 @@ def make_loaders(
     return train_loader, val_loader, test_loader
 
 
-# ── Training loop ─────────────────────────────────────────────────────────────
-
 def train_lstm(
     model,
     train_loader,
@@ -124,29 +108,11 @@ def train_lstm(
     device: str = 'cpu',
 ) -> tuple:
     """
-    Training loop for SepsisLSTM.
+    Train SepsisLSTM with early stopping on val AUPRC.
 
-    Features:
-    - BCEWithLogitsLoss with pos_weight for class imbalance
-    - Gradient clipping (max_norm=1.0) — prevents exploding gradients on long sequences
-    - ReduceLROnPlateau scheduler — halves lr when val AUPRC plateaus for 5 epochs
-    - Early stopping — halts when val AUPRC doesn't improve for 'patience' epochs
-
-    Parameters
-    ----------
-    model       : SepsisLSTM instance
-    train_loader: DataLoader from make_loaders()
-    val_loader  : DataLoader from make_loaders()
-    n_epochs    : maximum training epochs
-    lr          : initial learning rate
-    pos_weight  : scalar weight for positive class (neg/pos count ratio)
-    patience    : early stopping patience in epochs
-    device      : 'cuda' or 'cpu'
-
-    Returns
-    -------
-    model           : best model (weights restored from best val epoch)
-    best_val_auprc  : best validation AUPRC achieved
+    Gradient clipping (max_norm=1.0) guards against exploding gradients on long
+    sequences. pos_weight should be set to the neg/pos ratio to handle class
+    imbalance. Returns the best model state and best val AUPRC.
     """
     model = model.to(device)
 
@@ -162,7 +128,6 @@ def train_lstm(
     epochs_no_improve = 0
 
     for epoch in range(n_epochs):
-        # ── Train ────────────────────────────────────────
         model.train()
         train_loss = 0.0
 
@@ -187,7 +152,6 @@ def train_lstm(
             optimizer.step()
             train_loss += loss.item()
 
-        # ── Validate ──────────────────────────────────────
         model.eval()
         all_probs, all_labels = [], []
 
