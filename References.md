@@ -43,6 +43,6 @@ Throughout this project we used AI assistance to support parts of our developmen
 
 - "The LSTM training is crashing with an out of memory error when we try to batch the sequences. Some patients have over 200 timesteps. How does sequence length affect memory during batching and what is the right way to handle patients with very long stays without losing their data?"
 
-- "Our LSTM loss starts reasonable then suddenly rises to a huge number and never comes back down. Training is running but the model is not converging at all. What causes this kind of sudden loss explosion in recurrent networks and how do we stabilize it?"
+- " LSTM loss starts reasonable then suddenly rises to a huge number and never comes back down. Training is running but the model is not converging at all. What causes this kind of sudden loss explosion in recurrent networks and how do we stabilize it?"
 
-- "Our model finishes training with a low loss but when we evaluate it the recall for sepsis patients is zero. It is predicting no sepsis for every single patient. The loss looked fine during training so we did not catch it until evaluation. What is happening and how do we fix it?"
+- "The model finishes training with a low loss but when we evaluate it the recall for sepsis patients is zero. It is predicting no sepsis for every single patient. The loss looked fine during training so we did not catch it until evaluation. What is happening and how do we fix it?"
