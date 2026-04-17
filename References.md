@@ -30,8 +30,19 @@ Singer, M., et al. (2016). [The third international consensus definitions for se
 
 Throughout this project we used AI assistance to support parts of our development workflow. Rather than using it to generate results or analysis, we used it as a practical tool to move faster on tasks that were outside the core machine learning work.
 
-**AI Used:** Claude (Anthropic)
+**AI Used:** Claude
 
 - **Git workflow automation:** We used Claude to help automate repetitive git tasks such as creating pull requests, writing commit messages, pushing branches, and editing commit history without an interactive editor.
 
 - **Code debugging:** When we encountered errors in our code, we used Claude to help identify the root cause and understand what was going wrong before applying a fix.
+
+**Example of specific prompts used:**
+
+
+- "Our LSTM training loss is printing as NaN from the very first epoch and never recovers. The model is not learning anything. We checked the architecture and it looks fine. What in the input data could cause the loss to immediately become NaN and how do we track down where the NaN is coming from?"
+
+- "The LSTM training is crashing with an out of memory error when we try to batch the sequences. Some patients have over 200 timesteps. How does sequence length affect memory during batching and what is the right way to handle patients with very long stays without losing their data?"
+
+- "Our LSTM loss starts reasonable then suddenly rises to a huge number and never comes back down. Training is running but the model is not converging at all. What causes this kind of sudden loss explosion in recurrent networks and how do we stabilize it?"
+
+- "Our model finishes training with a low loss but when we evaluate it the recall for sepsis patients is zero. It is predicting no sepsis for every single patient. The loss looked fine during training so we did not catch it until evaluation. What is happening and how do we fix it?"
